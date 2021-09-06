@@ -1,13 +1,18 @@
-{.$D-,L-,S-,I-,R-,G+}
+{$D-,L-,S-,I-,R-,G+}
 {$M 16384,0,80000}
 
 Program Mod2Zip;
 Uses Crt,dos;
-Var NextF : SearchRec;
-    de,
-    Mods,s3m : Boolean;
+Const
+    ZipStr   : string = 'C:\UTIL\PKZIP.EXE ';
+Type
+    ModType  = (MOD15,MOD31,MOD8,FLT4,FLT8,CHN6,CHN8,S3M,INVALID);
+Var NextF    : SearchRec;
+    DizStr   : String;
+    MTest    : ModType;
+    de       : boolean;
     SongName : String;
-    ModType  : String[3];
+    ModTypeS : String[3];
     WorkF    : String;
     TpStr    : String;
     DF       : file of byte;
@@ -20,8 +25,10 @@ label skip;
 Procedure _Header;
 Begin
 ClrScr;
-WriteLn(' Mod2Zip Converter 1.Oá by iNviSiBLE EviL                               [iSD]');
-WriteLn('ÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ');
+WriteLn(' Mod2Zip Converter v1.3 by iNviSiBLE EviL                                [iSD]');
+WriteLn('+-----------------------------------------------------------------------------+');
+WriteLn('  Prossesing       Description                                           DONE');
+WriteLn('+-----------------------------------------------------------------------------+');
 End;
 Function Exist(s1 : String):Boolean;
 Var S: SearchRec; I:IntegeR;
@@ -34,7 +41,7 @@ End;
 Procedure ZipEmDown;
 var args : String;
 Begin
-  Args := 'c:\util\PKZIP.EXE '+NM+'.ZIP '+NM+Ext+' FILE_ID.DIZ';
+  Args := ZipStr+' '+NM+'.ZIP '+NM+Ext+' FILE_ID.DIZ';
   exec(GETENV('COMSPEC'),'/C'+args+' >nul:');
 End;
 
@@ -62,8 +69,8 @@ hump:
   begin
     SongName := NextF.Name;
   end;
-  Mods := False;
-  S3M := True;
+(*  Mods := False;
+  S3M := True;*)
   close(f);
 End;
 
@@ -94,18 +101,17 @@ Begin
   end;
 hump:
   Close(f);
-  Mods := True;
-  S3M := False;
+(*  Mods := True;
+  S3M := False;*)
 End;
 Procedure MakeDiz;
 Var
   DizF  : Text;
-  DizStr : String;
   Tstr   : String;
   ta,isd : byte;
 Begin
  DizStr := '';
- if s3m then TStr  := '[S3M]' else TStr := '[MOD]';
+ (*if s3m then TStr  := '[S3M]' else TStr := '[MOD]';*)
  DizStr := SongName;
  ta := ((40 - ord(TStr[0])) - ord(DizStr[0]));
  for isd := 1 to ta do DizStr := DizStr +' ';
@@ -124,24 +130,29 @@ Begin
   begin
     if (paramstr(2) = '/d') or (paramstr(2) = '/D') then de := true;
   end;
+  window(1,5,80,25);
   FindFirst(ParamStr(1),AnyFile,NextF);
   if DosError <> 0 then Begin WriteLn(' No files found.'); Halt;End;
   while not (DosError = 18) do
   Begin
-    Mods := False; S3M := False;
     WorkF := FExpand(NextF.Name);
     FSPlit(WorkF,DIS,NM,EXT);
-    if not ((EXT = '.S3M') or (EXT = '.MOD')) then goto skip;
     if (NextF.name = '.') or (NextF.name = '..') then goto skip;
     if (NextF.Size = 0) then goto skip;
-    Write(' Processing : ');Write(NextF.Name); TY := WhereY;
-    if (EXT = '.S3M') then
-    GetS3Minfo
-    else
-    GetModInfo;
+    write('  ');Write(NextF.Name); TY := WhereY;
+    if (EXT = '.S3M') then MTest := S3M else
+     if (EXT = '.MOD') then
+    case EXT of
+     '.S3M' : MTest := S3M;
+     else
+      MTest := INVALID;
+    end;
+    if (EXT = '.S3M') then GetS3Minfo else GetModInfo;
+
     MakeDiz;
+    gotoxy(20,ty);Write(DizStr);
     ZipEmDown;
-    gotoxy(73,ty);WriteLn('Done.');
+    gotoxy(75,ty);WriteLn('û');
     if de then
     begin
       Assign(df,NextF.Name);
